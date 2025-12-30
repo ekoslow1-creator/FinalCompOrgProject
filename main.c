@@ -8,18 +8,23 @@ int main(void) {
     int bop;
     char stern[10];
     double hype;
-    my_scanf("%c %d %s %f", &elza, &bop, &stern, &hype);
-    printf("%c %d %s %f", elza, bop, stern, hype);
+    unsigned int ellie;
+
+    my_scanf("%c %d %s %f %x", &elza, &bop, &stern, &hype, &ellie);
+    printf("%c %d %s %f %x", elza, bop, stern, hype, ellie);
 }
 
 int read_int(FILE *stream, int *value);
 int read_char(FILE *stream, char *c);
 int read_string(FILE *stream, char *str);
 int read_double(FILE *stream, double *value);
+int read_hex(FILE *stream, unsigned int *value);
 
 void skip_whitespace(FILE *stream);
 int is_whitespace(int c);
 int is_digit(int c);
+int is_hex_digit(int c);
+int hex_to_int(int c);
 
 int my_scanf(const char *format, ...) {
     va_list args;
@@ -66,6 +71,16 @@ int my_scanf(const char *format, ...) {
                 case 'f': {
                     double *ptr = va_arg(args, double*);
                     if (read_double(stdin, ptr)) {
+                        count++;
+                    } else {
+                        va_end(args);
+                        return count;
+                    }
+                    break;
+                }
+                case 'x': {
+                    unsigned int *ptr = va_arg(args, unsigned int*);
+                    if (read_hex(stdin, ptr)) {
                         count++;
                     } else {
                         va_end(args);
@@ -287,6 +302,52 @@ int read_double(FILE *stream, double *value) {
     return 1; // Success
 }
 
+int read_hex(FILE *stream, unsigned int *value) {
+    int c = getc(stream);
+    unsigned int result = 0;
+    int digit_found = 0;
+
+    // Step 1: Skip leading whitespace
+    while (is_whitespace(c)) {
+        c = getc(stream);
+    }
+
+    // Step 2: Optional "0x" or "0X" prefix
+    if (c == '0') {
+        int next = getc(stream);
+        if (next == 'x' || next == 'X') {
+            // Valid 0x prefix, move to next character
+            c = getc(stream);
+        } else {
+            // Just a '0', not followed by 'x'
+            // The '0' is a valid hex digit
+            digit_found = 1;
+            result = 0;
+            c = next; // Process the character after '0'
+        }
+    }
+
+    // Step 3: Read hex digits
+    while (is_hex_digit(c)) {
+        digit_found = 1;
+        result = result * 16 + hex_to_int(c);
+        c = getc(stream);
+    }
+
+    // Step 4: Check if we found at least one digit
+    if (!digit_found) {
+        return 0; // Failure - no valid hex number
+    }
+
+    // Step 5: Put back the non-hex character
+    if (c != EOF) {
+        ungetc(c, stream);
+    }
+
+    *value = result;
+    return 1; // Success
+}
+
 int is_whitespace(int c) {
     return (c == ' ' || c == '\n' || c == '\t' \
         || c == '\r' || c == '\f' || c == '\v');
@@ -302,4 +363,21 @@ void skip_whitespace(FILE *stream) {
 
 int is_digit(int c) {
     return (c >= '0' && c <= '9');
+}
+
+int is_hex_digit(int c) {
+    return (c >= '0' && c <= '9') || \
+           (c >= 'a' && c <= 'f') || \
+           (c >= 'A' && c <= 'F');
+}
+
+int hex_to_int(int c) {
+    if (c >= '0' && c <= '9') {
+        return c - '0';
+    } else if (c >= 'a' && c <= 'f') {
+        return c - 'a' + 10; // 'a' = 10, 'b' = 11, etc.
+    } else if (c >= 'A' && c <= 'F') {
+        return c - 'A' + 10; // 'A' = 10, 'B' = 11, etc.
+    }
+    return 0;
 }
