@@ -5,13 +5,14 @@ int my_scanf(const char *format, ...);
 
 int main(void) {
     char elza;
-    char bop;
+    int bop;
     char hip;
-    return my_scanf("%c %c %c", &elza, &bop, &hip);
+    my_scanf("%c %d %c", &elza, &bop, &hip);
+    printf("%c %d %c", elza, bop, hip);
 }
 
 void skip_whitespace(FILE *stream);
-int read_int(FILE *stream, int *i);
+int read_int(FILE *stream, int *value);
 int read_uint(FILE *stream, unsigned int *value);
 int read_char(FILE *stream, char *c);
 int read_string(FILE *stream, char *str);
@@ -99,8 +100,42 @@ int read_char(FILE *stream, char *c) {
 
 // MUST CREATE ALL FUNCTIONS BELOW
 
-int read_int(FILE *stream, int *i) {
-    return 1;
+int read_int(FILE *stream, int *value) {
+    int c = getc(stream);
+    int sign = 1;
+    int result = 0;
+    int digit_found = 0;
+
+    // Step 1: Skip leading whitespace
+    while (is_whitespace(c)) {
+        c = getc(stream);
+    }
+
+    // Step 2: Check for optional sign
+    if (c == '-') {
+        sign = -1;
+        c = getc(stream);
+    } else if (c == '+') {
+        c = getc(stream);
+    }
+
+    // Step 3: Read digits
+    while (is_digit(c)) {
+        digit_found = 1;
+        result = result * 10 + (c - '0'); // Build the number
+        c = getc(stream);
+    }
+
+    // Step 4: Check if we found at least one digit
+    if (!digit_found) {
+        return 0; // Failure - no valid integer inputted
+    }
+
+    // Apply positive or negative sign and store result
+    *value = result * sign;
+
+    ungetc(c, stream); // We consumed one too many characters
+    return 1; // Success
 }
 
 int read_string(FILE *stream, char *s) {
@@ -118,4 +153,8 @@ void skip_whitespace(FILE *stream) {
         c = getc(stream);  // Keep reading
     }
     ungetc(c, stream); // Put back the first non whitespace character
+}
+
+int is_digit(int c) {
+    return (c >= '0' && c <= '9');
 }
