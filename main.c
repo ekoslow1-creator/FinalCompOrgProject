@@ -1,10 +1,22 @@
 #include <stdarg.h>
 #include <stdio.h>
 
+int my_scanf(const char *format, ...);
+
 int main(void) {
     char elza;
-    my_scanf("%c", &elza);
+    char bop;
+    char hip;
+    return my_scanf("%c %c %c", &elza, &bop, &hip);
 }
+
+void skip_whitespace(FILE *stream);
+int read_int(FILE *stream, int *i);
+int read_uint(FILE *stream, unsigned int *value);
+int read_char(FILE *stream, char *c);
+int read_string(FILE *stream, char *str);
+int is_whitespace(int c);
+int is_digit(int c);
 
 int my_scanf(const char *format, ...) {
     va_list args;
@@ -18,8 +30,7 @@ int my_scanf(const char *format, ...) {
             i++; // Move past '%'
 
             switch (format[i]) {
-                case 'd':
-                case 'i': {
+                case 'd': {
                     int *ptr = va_arg(args, int*);
                     if (read_int(stdin, ptr)) {
                         count++;
@@ -53,6 +64,9 @@ int my_scanf(const char *format, ...) {
                     // Match literal '%'
                     // Implementation needed
                     break;
+                default: {
+                    break;
+                }
             }
             i++;
         } else if (is_whitespace(format[i])) {
@@ -75,11 +89,10 @@ int my_scanf(const char *format, ...) {
 }
 
 int read_char(FILE *stream, char *c) {
-    int ch = getc(stream);
+    const int ch = getc(stream);
     if (ch == EOF) {
         return 0; // Failure - no character available
     }
-
     *c = (char)ch; // Store the characters at the pointer location
     return 1; // Success
 }
@@ -94,10 +107,15 @@ int read_string(FILE *stream, char *s) {
     return 1;
 }
 
-int is_whitespace() {
-    return 1;
+int is_whitespace(int c) {
+    return (c == ' ' || c == '\n' || c == '\t' \
+        || c == '\r' || c == '\f' || c == '\v');
 }
 
-int skip_whitespace(FILE *stream) {
-    return 1;
+void skip_whitespace(FILE *stream) {
+    int c = getc(stream);
+    while (is_whitespace(c)) { // If c is still whitespace
+        c = getc(stream);  // Keep reading
+    }
+    ungetc(c, stream); // Put back the first non whitespace character
 }
