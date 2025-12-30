@@ -6,16 +6,18 @@ int my_scanf(const char *format, ...);
 int main(void) {
     char elza;
     int bop;
-    char hip;
-    my_scanf("%c %d %c", &elza, &bop, &hip);
-    printf("%c %d %c", elza, bop, hip);
+    char stern[10];
+    double hype;
+    my_scanf("%c %d %s %f", &elza, &bop, &stern, &hype);
+    printf("%c %d %s %f", elza, bop, stern, hype);
 }
 
-void skip_whitespace(FILE *stream);
 int read_int(FILE *stream, int *value);
-int read_uint(FILE *stream, unsigned int *value);
 int read_char(FILE *stream, char *c);
 int read_string(FILE *stream, char *str);
+int read_double(FILE *stream, double *value);
+
+void skip_whitespace(FILE *stream);
 int is_whitespace(int c);
 int is_digit(int c);
 
@@ -54,6 +56,16 @@ int my_scanf(const char *format, ...) {
                 case 's': {
                     char *ptr = va_arg(args, char*);
                     if (read_string(stdin, ptr)) {
+                        count++;
+                    } else {
+                        va_end(args);
+                        return count;
+                    }
+                    break;
+                }
+                case 'f': {
+                    double *ptr = va_arg(args, double*);
+                    if (read_double(stdin, ptr)) {
                         count++;
                     } else {
                         va_end(args);
@@ -138,8 +150,141 @@ int read_int(FILE *stream, int *value) {
     return 1; // Success
 }
 
-int read_string(FILE *stream, char *s) {
-    return 1;
+int read_string(FILE *stream, char *str) {
+    int c = getc(stream);
+    int index = 0;
+
+    // Step 1: Skip leading whitespace
+    while (is_whitespace(c)) {
+        c = getc(stream);
+    }
+
+    // Step 2: Check for EOF before reading anything
+    if (c == EOF) {
+        return 0; // Failure - no string to read
+    }
+
+    // Step 3: Read characters until whitespace or EOF
+    while (c != EOF && !is_whitespace(c)) {
+        str[index] = (char)c;
+        index++;
+        c = getc(stream);
+    }
+
+    // Step 4: Null-terminate the string
+    str[index] = '\0';
+
+    // Step 5: Put back the whitespace/EOF character
+    if (c != EOF) {
+        ungetc(c, stream);
+    }
+
+    // Step 6: Check if we read at least one character
+    if (index == 0) {
+        return 0; // Failure - no characters read
+    }
+
+    return 1; // Success
+}
+
+int read_double(FILE *stream, double *value) {
+    int c = getc(stream);
+    int sign = 1;
+    double result = 0.0;
+    int digit_found = 0;
+
+    // Step 1: Skip leading whitespace
+    while (is_whitespace(c)) {
+        c = getc(stream);
+    }
+
+    // Step 2: Check for optional sign
+    if (c == '-') {
+        sign = -1;
+        c = getc(stream);
+    } else if (c == '+') {
+        c = getc(stream);
+    }
+
+    // Step 3: Read integer part
+    while (is_digit(c)) {
+        digit_found = 1;
+        result = result * 10.0 + (c - '0');
+        c = getc(stream);
+    }
+
+    // Step 4: Check for decimal point
+    if (c == '.') {
+        c = getc(stream);
+        double fraction = 0.1;
+
+        // Read fractional part
+        while (is_digit(c)) {
+            digit_found = 1;
+            result = result + (c - '0') * fraction;
+            fraction = fraction * 0.1;
+            c = getc(stream);
+        }
+    }
+
+    // Step 5: Check if we found at least one digit
+    if (!digit_found) {
+        return 0; // Failure - no valid float
+    }
+
+    // Step 6: Check for scientific notation (e or E)
+    if (c == 'e' || c == 'E') {
+        c = getc(stream);
+        int exp_sign = 1;
+        int exponent = 0;
+        int exp_digit_found = 0;
+
+        // Check for optional sign in exponent
+        if (c == '-') {
+            exp_sign = -1;
+            c = getc(stream);
+        } else if (c == '+') {
+            c = getc(stream);
+        }
+
+        // Read exponent digits
+        while (is_digit(c)) {
+            exp_digit_found = 1;
+            exponent = exponent * 10 + (c - '0');
+            c = getc(stream);
+        }
+
+        // If we had 'e' but no valid exponent, that's an error
+        if (!exp_digit_found) {
+            return 0;
+        }
+
+        // Apply exponent: result = result * 10^(exp_sign * exponent)
+        exponent = exponent * exp_sign;
+
+        // Calculate 10^exponent
+        double multiplier = 1.0;
+        if (exponent > 0) {
+            for (int i = 0; i < exponent; i++) {
+                multiplier *= 10.0;
+            }
+        } else if (exponent < 0) {
+            for (int i = 0; i < -exponent; i++) {
+                multiplier /= 10.0;
+            }
+        }
+
+        result = result * multiplier;
+    }
+
+    if (c != EOF) {
+        ungetc(c, stream); // We consumed one too many characters
+    }
+
+    // Apply sign and store result
+    *value = result * sign;
+
+    return 1; // Success
 }
 
 int is_whitespace(int c) {
