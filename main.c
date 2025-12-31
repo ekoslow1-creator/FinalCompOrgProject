@@ -88,12 +88,31 @@ int my_scanf(const char *format, ...) {
                     }
                     break;
                 }
-                case '%':
+                case '%': {
                     // Match literal '%'
-                    // Implementation needed
+                    int c = getc(stdin);
+
+                    // Skip leading whitespace (like other format specifiers do)
+                    while (is_whitespace(c)) {
+                        c = getc(stdin);
+                    }
+
+                    // Check if the character is '%'
+                    if (c == '%') {
+                        // Successfully matched, continue.
+                        // Don't increment count - we didn't assign to a variable
+                    } else {
+                        // Mismatch - matching failed
+                        va_end(args);
+                        return count;
+                    }
                     break;
+                }
                 default: {
-                    break;
+                    // Unknown format specifier - stop processing
+                    // This handles cases like %p, %n, %o, etc. that we haven't implemented
+                    va_end(args);
+                    return count;
                 }
             }
             i++;
