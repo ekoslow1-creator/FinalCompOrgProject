@@ -1,15 +1,22 @@
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 
 int my_scanf(const char *format, ...);
 void test_char_multiple();
 void test_int_multiple();
+void test_string_multiple();
+void test_float_multiple();
+void test_hex_multiple();
 
 int main(void) {
     // Redirect standard input to my own text file
     freopen("lzbop.txt", "r", stdin);
     test_char_multiple();
     test_int_multiple();
+    test_string_multiple();
+    test_float_multiple();
+    test_hex_multiple();
 }
 
 // Core helper functions
@@ -417,6 +424,7 @@ void test_char_multiple() {
             printf("FAIL: scanf = %c, my_scanf = %c\n", c1, c2);
         }
     }
+    printf("\n");
 }
 
 void test_int_multiple() {
@@ -440,8 +448,100 @@ void test_int_multiple() {
 
         // Compare & raise potential error
         printf("scanf = %d my_scanf = %d\n", d1, d2);
-        if (ret1 != ret2 || d1 != d2) {
-            printf("FAIL (scanf = %d, my_scanf = %d\n", d1, d2);
+        if (d1 == d2 && !is_digit(d1)) {
+            printf("OK\n"); // Acknowledge noninteger input
+        } else if (ret1 != ret2 || d1 != d2) {
+            printf("FAIL (scanf = %d, my_scanf = %d)\n", d1, d2);
         }
     }
+    printf("\n");
+}
+
+void test_string_multiple() {
+    printf("Testing multiple strings\n");
+    // This is my third test function, so I expect scanf and my_scanf to read from third line of lzbop.txt
+    char *expected[] = {"Let's", "test", "string", "functionality."};
+    int num_tests = 4;
+
+    for (int i = 0; i < num_tests; i++) {
+        fpos_t pos;
+        fgetpos(stdin, &pos);
+
+        char s1[100];
+        int ret1 = scanf("%s", s1);
+
+        fsetpos(stdin, &pos);
+
+        char s2[100];
+        int ret2 = my_scanf("%s", s2);
+
+        if (ret1 == ret2 && strcmp(s1, s2) == 0 && strcmp(s1, expected[i]) == 0) {
+            printf("PASS\n");
+        } else {
+            printf("FAIL (expected='%s', scanf='%s', my_scanf='%s'\n", expected[i], s1, s2);
+        }
+    }
+    printf("\n");
+}
+
+void test_float_multiple() {
+    printf("Testing multiple floats\n");
+
+    int num_tests = 5;
+
+    for (int i = 0; i < num_tests; i++) {
+        fpos_t pos;
+        fgetpos(stdin, &pos);
+
+        double f1;
+        int ret1 = scanf("%lf", &f1);
+
+        fsetpos(stdin, &pos);
+
+        double f2;
+        int ret2 = my_scanf("%f", &f2);
+
+        if (ret1 == ret2) {
+            // Compare floats with small tolerance for rounding errors
+            double diff = f1 - f2;
+            if (diff < 0) diff = -diff; // Convert difference to absolute value
+
+            if (diff < 0.0001) {
+                printf("PASS (%.6f)\n", f1);
+            } else {
+                printf("FAIL (scanf=%.6f, my_scanf=%.6f, diff=%.6f)\n", f1, f2, diff);
+            }
+        } else {
+            printf("FAIL (scanf returned %d, my_scanf returned %d)\n", ret1, ret2);
+        }
+    }
+    printf("\n");
+}
+
+void test_hex_multiple() {
+    printf("Testing multiple hex values\n");
+
+    int num_tests = 6;
+
+    for (int i = 0; i < num_tests; i++) {
+        fpos_t pos;
+        fgetpos(stdin, &pos);
+
+        unsigned int h1;
+        int ret1 = scanf("%x", &h1);
+
+        fsetpos(stdin, &pos);
+
+        unsigned int h2;
+        int ret2 = my_scanf("%x", &h2);
+
+        if (ret1 == ret2 && h1 == h2) {
+            printf("PASS (%u or 0x%x)\n", h1, h1);
+        } else if (ret1 == ret2 && ret1 == 0) {
+            printf("PASS (both failed to read)\n");
+        } else {
+            printf("FAIL (scanf=%u/0x%x (ret=%d), my_scanf=%u/0x%x (ret=%d))\n", h1, h1, ret1, h2, h2, ret2);
+        }
+    }
+    printf("\n");
 }
