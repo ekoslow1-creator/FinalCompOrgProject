@@ -1,1 +1,0 @@
-This is where I am going to redirect standard input for the sake of test functions.
