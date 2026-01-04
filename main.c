@@ -2,16 +2,15 @@
 #include <stdio.h>
 
 int my_scanf(const char *format, ...);
+void test_char();
+void test_int();
+void test_int_multiple();
 
 int main(void) {
-    char elza;
-    int bop;
-    char stern[10];
-    double hype;
-    unsigned int ellie;
-
-    my_scanf("%c %d %s %f %x", &elza, &bop, &stern, &hype, &ellie);
-    printf("%c %d %s %f %x", elza, bop, stern, hype, ellie);
+    freopen("lzbop.txt", "r", stdin);
+    test_char();
+    test_int();
+    test_int_multiple();
 }
 
 int read_int(FILE *stream, int *value);
@@ -400,3 +399,68 @@ int hex_to_int(int c) {
     }
     return 0;
 }
+
+void test_char () {
+    printf("Testing %%c (character)\n");
+    char c1;
+    char c2;
+
+    scanf("%c", &c1);
+    printf("scanf read: '%c'\n", c1);
+
+    ungetc(c1, stdin); // reset so that my_scanf() reads same character
+    my_scanf("%c", &c2);
+    printf("my_scanf read: '%c'\n", c2);
+    if (c1 == c2) {
+        printf("PASS: Characters match\n");
+    } else {
+        printf("FAIL: scanf = '%c', my_scanf = '%c'\n", c1, c2);
+    }
+}
+
+void test_int() {
+    printf("Testing %%d (integer)\n");
+
+    // Save file position
+    fpos_t pos;
+    fgetpos(stdin, &pos);
+
+    // Test scanf
+    int d1;
+    int ret1 = scanf("%d", &d1);
+    printf("scanf returned: %d, read: %d\n", ret1, d1);
+
+    // Restore position
+    fsetpos(stdin, &pos);
+
+    // Test my_scanf
+    int d2;
+    int ret2 = my_scanf("%d", &d2);
+    printf("my_scanf returned: %d, read: %d\n", ret2, d2);
+
+    // Compare
+    if (ret1 == ret2 && d1 == d2) {
+        printf("PASS: Integers match\n");
+    } else {
+        printf("FAIL: scanf = '%d', my_scanf = '%d'\n", d1, d2);
+    }
+}
+
+void test_int_multiple() {
+    printf("Testing multiple integers\n");
+    int test_cases = 60;
+    for (int i = 0; i < test_cases; i++) {
+        fpos_t pos;
+        fgetpos(stdin, &pos);
+        int d1;
+        int ret1 = scanf("%d", &d1);
+        fsetpos(stdin, &pos);
+        int d2;
+        int ret2 = my_scanf("%d", &d2);
+        printf("scanf = %d, my_scanf= %d\n", d1, d2);
+        if (ret1 != ret2 || d1 != d2) {
+            printf("FAIL (scanf = %d, my_scanf = %d\n", d1, d2);
+        }
+    }
+}
+
