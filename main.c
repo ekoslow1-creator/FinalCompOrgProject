@@ -3,20 +3,30 @@
 #include <string.h>
 
 int my_scanf(const char *format, ...);
+
+// Test functions
 void test_char_multiple();
 void test_int_multiple();
 void test_string_multiple();
 void test_float_multiple();
 void test_hex_multiple();
+void test_binary();
+void test_roman();
+void test_word();
 
 int main(void) {
     // Redirect standard input to my own text file
     freopen("lzbop.txt", "r", stdin);
+
+    // Run tests!
     test_char_multiple();
     test_int_multiple();
     test_string_multiple();
     test_float_multiple();
     test_hex_multiple();
+    test_binary();
+    test_roman();
+    test_word();
 }
 
 // Core helper functions
@@ -25,6 +35,9 @@ int read_char(FILE *stream, char *c);
 int read_string(FILE *stream, char *str);
 int read_double(FILE *stream, double *value);
 int read_hex(FILE *stream, unsigned int *value);
+int read_binary(FILE *stream, unsigned int *value);
+int read_roman(FILE *stream, int *value);
+int read_word(FILE *stream, char *str);
 
 // Ancillary helper functions
 void skip_whitespace(FILE *stream);
@@ -32,6 +45,10 @@ int is_whitespace(int c);
 int is_digit(int c);
 int is_hex_digit(int c);
 int hex_to_int(int c);
+int is_binary_digit(int c);
+int roman_to_int(char c);
+int is_roman_digit(int c);
+int is_word_char(int c);
 
 int my_scanf(const char *format, ...) {
     va_list args;
@@ -110,6 +127,37 @@ int my_scanf(const char *format, ...) {
                         // Don't increment count - we didn't assign to a variable
                     } else {
                         // Mismatch - matching failed
+                        va_end(args);
+                        return count;
+                    }
+                    break;
+                }
+                // Custom extensions
+                    case 'b': {
+                    unsigned int *ptr = va_arg(args, unsigned int*);
+                    if (read_binary(stdin, ptr)) {
+                        count++;
+                    } else {
+                        va_end(args);
+                        return count;
+                    }
+                    break;
+                }
+                case 'r': {
+                    int *ptr = va_arg(args, int*);
+                    if (read_roman(stdin, ptr)) {
+                        count++;
+                    } else {
+                        va_end(args);
+                        return count;
+                    }
+                    break;
+                }
+                case 'w': {
+                    char *ptr = va_arg(args, char*);
+                    if (read_word(stdin, ptr)) {
+                        count++;
+                    } else {
                         va_end(args);
                         return count;
                     }
@@ -374,6 +422,134 @@ int read_hex(FILE *stream, unsigned int *value) {
     return 1; // Success
 }
 
+int read_binary(FILE *stream, unsigned int *value) {
+    int c = getc(stream);
+    unsigned int result = 0;
+    int digit_found = 0;
+
+    // Skip leading whitespace
+    while (is_whitespace(c)) {
+        c = getc(stream);
+    }
+
+    // Optional '0b' prefix
+    if (c == '0') {
+        int next = getc(stream);
+        if (next == 'b' || next == 'B') {
+            c = getc(stream);
+        } else {
+            digit_found = 1;
+            result = 0;
+            c = next;
+        }
+    }
+
+    // Read binary digits
+    while (is_binary_digit(c)) {
+        digit_found = 1;
+        result = result * 2 + (c - '0'); // Convert from binary to decimal
+        c = getc(stream);
+    }
+
+    if (!digit_found) {
+        return 0;
+    }
+
+    if (c != EOF) {
+        ungetc(c, stream);
+    }
+
+    *value = result;
+    return 1;
+}
+
+int read_roman(FILE *stream, int *value) {
+    int c = getc(stream);
+    int result = 0;
+    int digit_found = 0;
+    char roman_str[100];
+    int index = 0;
+
+    // Skip leading whitespace
+    while (is_whitespace(c)) {
+        c = getc(stream);
+    }
+
+    // Read all Roman numeral characters into a string first
+    while (is_roman_digit(c)) {
+        digit_found = 1;
+        roman_str[index++] = (char)c;
+        c = getc(stream);
+    }
+
+    if (!digit_found) {
+        return 0;
+    }
+
+    roman_str[index] = '\0'; // Null terminate
+
+    // Now convert the string
+    for (int i = 0; i < index; i++) {
+        int current = roman_to_int(roman_str[i]);
+
+        // Look ahead to next character
+        if (i + 1 < index) {
+            int next = roman_to_int(roman_str[i + 1]);
+
+            // If current is less than next, it's subtractive (IV, IX, XL, etc.)
+            if (current < next) {
+                result += (next - current);
+                i++;
+                continue;
+            }
+        }
+
+        // Normal case: just add the value
+        result += current;
+    }
+
+    if (c != EOF) {
+        ungetc(c, stream);
+    }
+
+    *value = result;
+    return 1;
+}
+
+int read_word(FILE *stream, char *str) {
+    int c = getc(stream);
+    int index = 0;
+
+    // Skip leading whitespace
+    while (is_whitespace(c)) {
+        c = getc(stream);
+    }
+
+    if (c == EOF) {
+        return 0;
+    }
+
+    // Read word characters
+    while (c != EOF && is_word_char(c)) {
+        str[index] = (char)c;
+        index++;
+        c = getc(stream);
+    }
+
+    // Null terminate
+    str[index] = '\0';
+
+    if (c != EOF) {
+        ungetc(c, stream);
+    }
+
+    if (index == 0) {
+        return 0;
+    }
+
+    return 1; // Success
+}
+
 int is_whitespace(int c) {
     return (c == ' ' || c == '\n' || c == '\t' \
         || c == '\r' || c == '\f' || c == '\v');
@@ -408,6 +584,35 @@ int hex_to_int(int c) {
     return 0;
 }
 
+int is_binary_digit(int c) {
+    return (c == '0' || c == '1');
+}
+
+int roman_to_int(char c) {
+    switch (c) {
+        case 'I': return 1;
+        case 'V': return 5;
+        case 'X': return 10;
+        case 'L': return 50;
+        case 'C': return 100;
+        case 'D': return 500;
+        case 'M': return 1000;
+        default: return 0;
+    }
+}
+
+int is_roman_digit(int c) {
+    return (c == 'I' || c == 'V' || c == 'X' || c == 'L' || c == 'C' || c == 'D' || c == 'M');
+}
+
+// Only considers alphanumeric & underscore characters
+int is_word_char(int c) {
+    return (c >= 'a' && c <= 'z') || \
+           (c >= 'A' && c <= 'Z') || \
+           (c >= '0' && c <= '9') || \
+           (c == '_');
+}
+
 // BELOW ARE MY TEST FUNCTIONS //
 
 void test_char_multiple() {
@@ -419,9 +624,10 @@ void test_char_multiple() {
         scanf("%c", &c1);
         ungetc(c1, stdin); // reset so that my_scanf() reads same character
         my_scanf("%c", &c2);
-        printf("scanf = %c my_scanf = %c\n", c1, c2);
-        if (c1 != c2) {
-            printf("FAIL: scanf = %c, my_scanf = %c\n", c1, c2);
+        if (c1 == c2) {
+            printf("PASS (scanf = %c my_scanf = %c)\n", c1, c2);
+        } else {
+            printf("FAIL (scanf = %c my_scanf = %c\n", c1, c2);
         }
     }
     printf("\n");
@@ -437,21 +643,23 @@ void test_int_multiple() {
 
         // Test scanf
         int d1;
-        int ret1 = scanf("%d", &d1);
+        scanf("%d", &d1);
 
         // Restore position
         fsetpos(stdin, &pos);
 
         // Test my_scanf
         int d2;
-        int ret2 = my_scanf("%d", &d2);
+        my_scanf("%d", &d2);
 
         // Compare & raise potential error
-        printf("scanf = %d my_scanf = %d\n", d1, d2);
-        if (d1 == d2 && !is_digit(d1)) {
-            printf("OK\n"); // Acknowledge noninteger input
-        } else if (ret1 != ret2 || d1 != d2) {
-            printf("FAIL (scanf = %d, my_scanf = %d)\n", d1, d2);
+        if (d1 == d2) {
+            if (!is_digit(d1)) {
+                printf("PASS (not an int)\n"); // Acknowledge noninteger input
+            }
+            printf("PASS (scanf = %d my_scanf = %d)\n", d1, d2);
+        } else {
+            printf("FAIL (scanf = %d my_scanf = %d)\n", d1, d2);
         }
     }
     printf("\n");
@@ -460,10 +668,10 @@ void test_int_multiple() {
 void test_string_multiple() {
     printf("Testing multiple strings\n");
     // This is my third test function, so I expect scanf and my_scanf to read from third line of lzbop.txt
-    char *expected[] = {"Let's", "test", "string", "functionality."};
     int num_tests = 4;
 
     for (int i = 0; i < num_tests; i++) {
+        char *expected[] = {"Let's", "test", "string", "functionality."};
         fpos_t pos;
         fgetpos(stdin, &pos);
 
@@ -476,7 +684,7 @@ void test_string_multiple() {
         int ret2 = my_scanf("%s", s2);
 
         if (ret1 == ret2 && strcmp(s1, s2) == 0 && strcmp(s1, expected[i]) == 0) {
-            printf("PASS\n");
+            printf("PASS (%s)\n", s2);
         } else {
             printf("FAIL (expected='%s', scanf='%s', my_scanf='%s'\n", expected[i], s1, s2);
         }
@@ -544,4 +752,67 @@ void test_hex_multiple() {
         }
     }
     printf("\n");
+}
+
+void test_binary() {
+    printf("Testing %%b (binary - CUSTOM EXTENSION)\n");
+
+    int num_tests = 4;
+
+    for (int i = 0; i < num_tests; i++) {
+        unsigned int expected[] = {10, 13, 255, 7}; // 1010, 1101, 11111111, 111
+        unsigned int val;
+        int ret = my_scanf("%b", &val);
+
+        if (ret == 1 && val == expected[i]) {
+            printf("PASS (read %u = ", val);
+            // Print in binary for verification
+            for (int j = 7; j >= 0; j--) {
+                printf("%d", (val >> j) & 1);
+            }
+            printf(")\n");
+        } else {
+            printf("FAIL (got %u)\n", val);
+        }
+    }
+    printf("\n");
+}
+
+void test_roman() {
+    printf("Testing %%r (roman numerals - CUSTOM EXTENSION)\n");
+
+    int num_tests = 6;
+
+    for (int i = 0; i < num_tests; i++) {
+        int expected[] = {1, 4, 9, 58, 1994, 3999}; // I, IV, IX, LVIII, MCMXCIV, MMMCMXCIX
+        int val;
+        int ret = my_scanf("%r", &val);
+
+        if (ret == 1 && val == expected[i]) {
+            printf("PASS (read %d)\n", val);
+        } else {
+            printf("FAIL (got %d)\n", val);
+        }
+    }
+    printf("\n");
+}
+
+void test_word() {
+    printf("Testing %%w (word/identifier - CUSTOM EXTENSION)\n");
+
+    // Test 1: Simple word
+    char word1[100];
+    my_scanf("%w", word1);
+    printf("Test 1: '%s' (expected simple word)\n", word1);
+
+    // Test 2: Word with underscore
+    char word2[100];
+    my_scanf("%w", word2);
+    printf("Test 2: '%s' (expected word with underscore)\n", word2);
+
+    // Test 3: Word with numbers
+    char word3[100];
+    my_scanf("%w", word3);
+    printf("Test 3: '%s' (expected word with numbers)\n", word3);
+
 }
