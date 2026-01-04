@@ -2,23 +2,24 @@
 #include <stdio.h>
 
 int my_scanf(const char *format, ...);
-void test_char();
-void test_int();
+void test_char_multiple();
 void test_int_multiple();
 
 int main(void) {
+    // Redirect standard input to my own text file
     freopen("lzbop.txt", "r", stdin);
-    test_char();
-    test_int();
+    test_char_multiple();
     test_int_multiple();
 }
 
+// Core helper functions
 int read_int(FILE *stream, int *value);
 int read_char(FILE *stream, char *c);
 int read_string(FILE *stream, char *str);
 int read_double(FILE *stream, double *value);
 int read_hex(FILE *stream, unsigned int *value);
 
+// Ancillary helper functions
 void skip_whitespace(FILE *stream);
 int is_whitespace(int c);
 int is_digit(int c);
@@ -37,9 +38,9 @@ int my_scanf(const char *format, ...) {
             i++; // Move past '%'
 
             switch (format[i]) {
-                case 'd': {
-                    int *ptr = va_arg(args, int*);
-                    if (read_int(stdin, ptr)) {
+                case 'c': {
+                    char *ptr = va_arg(args, char*);
+                    if (read_char(stdin, ptr)) {
                         count++;
                     } else {
                         va_end(args);
@@ -47,9 +48,9 @@ int my_scanf(const char *format, ...) {
                     }
                     break;
                 }
-                case 'c': {
-                    char *ptr = va_arg(args, char*);
-                    if (read_char(stdin, ptr)) {
+                case 'd': {
+                    int *ptr = va_arg(args, int*);
+                    if (read_int(stdin, ptr)) {
                         count++;
                     } else {
                         va_end(args);
@@ -400,67 +401,47 @@ int hex_to_int(int c) {
     return 0;
 }
 
-void test_char () {
-    printf("Testing %%c (character)\n");
-    char c1;
-    char c2;
+// BELOW ARE MY TEST FUNCTIONS //
 
-    scanf("%c", &c1);
-    printf("scanf read: '%c'\n", c1);
-
-    ungetc(c1, stdin); // reset so that my_scanf() reads same character
-    my_scanf("%c", &c2);
-    printf("my_scanf read: '%c'\n", c2);
-    if (c1 == c2) {
-        printf("PASS: Characters match\n");
-    } else {
-        printf("FAIL: scanf = '%c', my_scanf = '%c'\n", c1, c2);
-    }
-}
-
-void test_int() {
-    printf("Testing %%d (integer)\n");
-
-    // Save file position
-    fpos_t pos;
-    fgetpos(stdin, &pos);
-
-    // Test scanf
-    int d1;
-    int ret1 = scanf("%d", &d1);
-    printf("scanf returned: %d, read: %d\n", ret1, d1);
-
-    // Restore position
-    fsetpos(stdin, &pos);
-
-    // Test my_scanf
-    int d2;
-    int ret2 = my_scanf("%d", &d2);
-    printf("my_scanf returned: %d, read: %d\n", ret2, d2);
-
-    // Compare
-    if (ret1 == ret2 && d1 == d2) {
-        printf("PASS: Integers match\n");
-    } else {
-        printf("FAIL: scanf = '%d', my_scanf = '%d'\n", d1, d2);
+void test_char_multiple() {
+    printf("Testing multiple characters\n");
+    int test_cases = 62;
+    for (int i = 0; i < test_cases; i++) {
+        char c1;
+        char c2;
+        scanf("%c", &c1);
+        ungetc(c1, stdin); // reset so that my_scanf() reads same character
+        my_scanf("%c", &c2);
+        printf("scanf = %c my_scanf = %c\n", c1, c2);
+        if (c1 != c2) {
+            printf("FAIL: scanf = %c, my_scanf = %c\n", c1, c2);
+        }
     }
 }
 
 void test_int_multiple() {
     printf("Testing multiple integers\n");
-    int test_cases = 60;
+    int test_cases = 18;
     for (int i = 0; i < test_cases; i++) {
+        // Save file position
         fpos_t pos;
         fgetpos(stdin, &pos);
+
+        // Test scanf
         int d1;
         int ret1 = scanf("%d", &d1);
+
+        // Restore position
         fsetpos(stdin, &pos);
+
+        // Test my_scanf
         int d2;
         int ret2 = my_scanf("%d", &d2);
-        printf("scanf = %d, my_scanf= %d\n", d1, d2);
+
+        // Compare & raise potential error
+        printf("scanf = %d my_scanf = %d\n", d1, d2);
         if (ret1 != ret2 || d1 != d2) {
             printf("FAIL (scanf = %d, my_scanf = %d\n", d1, d2);
         }
     }
 }
-
