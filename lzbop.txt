@@ -1,9 +1,11 @@
 This is the file I am reading from.
 Here is a list of numbers: 1 -2 +3 4 5 6 PSYCH! 7 -89 101112 131 4 15
-Let's test string functionality.
+Let's test string     functionality.
 3.141592 1.41421356 39e-5 0.543 2e10
 x10 BEEF abcd 1A 54ed
-What else should I write? Here's a poem:
+1010 1101 0b11111111 0B111
+I IV IX LVIII MCMXCIV MMMCMXCIX
+What else_should 1234 write? Here's a poem:
 "Once upon a midnight dreary
 While I pondered weak & weary
 Over many a quaint & curious volume of forgotten lore
