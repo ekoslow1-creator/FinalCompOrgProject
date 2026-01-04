@@ -1,5 +1,5 @@
 This is the file I am reading from.
-Here is a list of numbers: 1 2 3 4 5 6 7 89 101112 131 4 15
+Here is a list of numbers: 1 -2 +3 4 5 6 PSYCH! 7 -89 101112 131 4 15
 Random characters: # *&^ (#_@
 Floating point integers like pi (3.141592) and radical 2 (1.41421356)
 What else should I write? Here's a poem:
