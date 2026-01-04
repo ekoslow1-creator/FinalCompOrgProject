@@ -199,7 +199,7 @@ int read_char(FILE *stream, char *c) {
     return 1; // Success
 }
 
-// MUST CREATE ALL FUNCTIONS BELOW
+// CORE HELPER FUNCTIONS //
 
 int read_int(FILE *stream, int *value) {
     int c = getc(stream);
@@ -549,6 +549,8 @@ int read_word(FILE *stream, char *str) {
 
     return 1; // Success
 }
+
+// ANCILLARY HELPER FUNCTIONS //
 
 int is_whitespace(int c) {
     return (c == ' ' || c == '\n' || c == '\t' \
