@@ -190,6 +190,8 @@ int my_scanf(const char *format, ...) {
     return count;
 }
 
+// CORE HELPER FUNCTIONS //
+
 int read_char(FILE *stream, char *c) {
     const int ch = getc(stream);
     if (ch == EOF) {
@@ -198,8 +200,6 @@ int read_char(FILE *stream, char *c) {
     *c = (char)ch; // Store the characters at the pointer location
     return 1; // Success
 }
-
-// CORE HELPER FUNCTIONS //
 
 int read_int(FILE *stream, int *value) {
     int c = getc(stream);
